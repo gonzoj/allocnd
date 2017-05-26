@@ -2,6 +2,9 @@
 
 echo "`date`: restart ssh with AllowUsers=$1" >> sshd.commands
 
-# echo "AllowUsers=$1" >> /etc/sshd_config
+# if [[ -z `grep "AllowUsers root" /etc/ssh/sshd_config` ]]; then
+# 	echo "AllowUsers root >> /etc/ssh/sshd_config
+# fi
+# echo "AllowUsers $1" >> /etc/ssh/sshd_config
 # /etc/init.d/ssh restart
 
