@@ -1,10 +1,9 @@
 #!/bin/sh
 
-echo "`date`: restart ssh with AllowUsers=$1" >> sshd.commands
+echo "`date`: restart ssh with AllowUsers root $1" >> sshd.commands
 
-# if [[ -z `grep "AllowUsers root" /etc/ssh/sshd_config` ]]; then
-# 	echo "AllowUsers root >> /etc/ssh/sshd_config
-# fi
-# echo "AllowUsers $1" >> /etc/ssh/sshd_config
+# potentially need to kill sshd instances to kick idle users here
+# sed -i "s/^AllowUsers/# SSHALLOC AllowUsers/" /etc/ssh/sshd_config
+# echo "AllowUsers root $1" >> /etc/ssh/sshd_config
 # /etc/init.d/ssh restart
 

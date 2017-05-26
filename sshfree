@@ -1,7 +1,8 @@
 #!/bin/sh
 
-echo "`date`: restart ssh without AllowUsers=$1" >> sshd.commands
+echo "`date`: restart ssh without AllowUsers root $1" >> sshd.commands
 
-# sed -i "/^AllowUsers $1$/d" /etc/ssh/sshd_config
+# sed -i "s/^# SSHALLOC AllowUsers/AllowUsers/" /etc/ssh/sshd_config
+# sed -i "/^AllowUsers root $1$/d" /etc/ssh/sshd_config
 # /etc/init.d/ssh restart
 
