@@ -1,0 +1,94 @@
+#!/bin/sh
+
+dir=`pwd`
+database="`pwd`/i80node.db"
+log="`pwd`/allocnd.log"
+
+user=`whoami`
+
+OPTIND=1
+
+function show_usage {
+	echo "usage:"
+	echo ""
+	echo "	-h/-u/-?:	show this message"
+	echo "	-r \"FROM-TO\":	make a reservation beginning at 'FROM' until 'TO'"
+	echo "			strings 'FROM' and 'TO' must conform to the format expected by date -d (see 'man date')"
+	echo "	-d \"ID\":	delete your reservation with id 'ID'"
+	echo "	-l:		list reservations (FORMAT: [ID] FROM - TO (USER)"
+	echo ""
+	echo ""
+	echo "examples:"
+	echo ""
+	echo "$ allocn -l"
+	echo "	lists all reservations, for example:"
+	echo "[1] Thu May 25 21:01:32 CEST 2017 - Thu May 25 21:03:13 CEST 2017 (alice)"
+	echo "[2] Thu May 25 22:00:32 CEST 2017 - Thu May 25 23:03:25 CEST 2017 (bob)"
+	echo ""
+	echo "$ allocn -d 2"
+	echo "	deletes reservation with id '2' made by bob"
+	echo ""
+	echo "$ alloc -r \"now-next Thursday\""
+	echo "	makes a reservation from right now until next thursday"
+	echo ""
+	echo "$ alloc -r \"18:00-22:00\""
+	echo "	makes a reservation from today 18:00 until today 22:00"
+	echo ""
+	echo "$ alloc -r \"6/1 15:00-7/1 13:00\""
+	echo "	makes a reservation from June 6th 15:00 until June 7th 13:00"
+	echo ""
+}
+
+if [[ "$#" -eq 0 ]]; then
+	show_usage
+	exit 0
+fi
+
+while getopts "r:d:lhu?" opt; do
+	case "$opt" in
+		h|u|\?)
+			show_usage
+			exit 0
+			;;
+		r)
+			from=`echo $OPTARG | sed -e 's/^\(.*\)-.*$/\1/'`
+			u_from=`date -d $from +%s`
+			to=`echo $OPTARG | sed -e 's/^.*-\(.*\)$/\1/'`
+			u_to=`date -d $to +%s`
+			if [[ -z "$u_from" || -z "$u_to" ]]; then
+				echo "error: argument '$OPTARG'is not a valid date string"
+				exit 1
+			fi
+			if [[ -f "$dir/$user" ]]; then
+				rm "$dir"/$user
+			fi
+			echo "REQUEST $u_from-$u_to" > "$dir"/$user
+			inotifywait -e modify --format "%w %f" "$log" 2>/dev/null |
+			while read path file; do
+				tail -n1 "$path$file"
+			done
+			;;
+		d)
+			if [[ -f "$dir/$user" ]]; then
+				rm "$dir"/$user
+			fi
+			echo "DELETE $OPTARG" > "$dir"/$user
+			inotifywait -e modify --format "%w %f" "$log" 2>/dev/null |
+			while read path file; do
+				tail -n1 "$path$file"
+			done
+			;;
+		l)
+			n=0
+			while read from to user jid1 jid2; do
+				n=`expr $n + 1`
+				echo "[$n] `date -d@$from` - `date -d@$to` ($user)"
+			done < "$database"
+			;;
+	esac
+done
+
+shift $((OPTIND-1))
+
+[ "$1" = "--" ] && shift
+
