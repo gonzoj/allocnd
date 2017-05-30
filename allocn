@@ -1,8 +1,8 @@
 #!/bin/sh
 
-dir=`pwd`
-database="`pwd`/i80node.db"
-log="`pwd`/allocnd.log"
+dir="/run/allocnd"
+database="/etc/allocnd/i80node.db"
+log="/run/allocnd/allocnd.log"
 
 user=`whoami`
 

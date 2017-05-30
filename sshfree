@@ -1,8 +1,4 @@
 #!/bin/sh
 
-echo "`date`: restart ssh without AllowUsers root $1" >> sshd.commands
-
-# sed -i "s/^# SSHALLOC AllowUsers/AllowUsers/" /etc/ssh/sshd_config
-# sed -i "/^AllowUsers root $1$/d" /etc/ssh/sshd_config
-# /etc/init.d/ssh restart
+rm /etc/security/limits.d/allocn.conf
 

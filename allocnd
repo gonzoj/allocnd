@@ -1,9 +1,9 @@
 #!/bin/bash
 
-database="`pwd`/i80node.db"
-logfile="`pwd`/allocnd.log"
-alloccmd="`pwd`/sshalloc"
-freecmd="`pwd`/sshfree"
+database="/etc/allocnd/i80node.db"
+logfile="/run/allocnd//allocnd.log"
+alloccmd="/usr/local/bin/sshalloc"
+freecmd="/usr/local/bin/sshfree"
 
 if [[ ! -f "$database" ]]; then
 	touch "$database"
@@ -15,12 +15,11 @@ if [[ ! -f "$logfile" ]]; then
 	chmod 0644 "$logfile"
 fi
 
-if [[ ! -d "$1" ]]; then
-	echo "argument must be a directory"
-	exit 1
+if [[ ! -d "/run/allocnd" ]]; then
+	mkdir /run/allocnd
 fi
 
-inotifywait -m -e create --format "%w %f" "$1" |
+inotifywait -m -e create --format "%w %f" "/run/allocnd" |
 while read path file; do
 	if [[ ! -f "$path$file" ]]; then
 		continue
@@ -29,6 +28,10 @@ while read path file; do
 	if [ -n "`head -n1 "$path$file" | sed -e '/^REQUEST [0-9]*-[0-9]*$/!d'`" ]; then
 		from=`head -n1 "$path$file" | sed -e 's/^REQUEST \([0-9]*\)-.*$/\1/'`
 		to=`head -n1 "$path$file" | sed -e 's/^.*-\([0-9]*\)$/\1/'`
+		if [[ $from -gt $to ]]; then
+			echo "reservation begins after it is supposed to end" >> $logfile
+			continue
+		fi
 		conflict=false
 		while read _from _to _user _jid1 _jid2; do
 			if [[ ($from -ge $_from && $from -le $_to) || ($_from -ge $from && $_from -le $to) ]]; then
@@ -64,10 +67,19 @@ while read path file; do
 		fi
 		from=`echo $entry | sed -e 's/^\(.*\) .* .* .* .*$/\1/'`
 		to=`echo $entry | sed -e 's/^.* \(.*\) .* .* .*$/\1/'`
+		now=`date +%s`
 		jid1=`echo $entry | sed -e 's/^.* .* .* \(.*\) .*$/\1/'`
 		jid2=`echo $entry | sed -e 's/^.* .* .* .* \(.*\)$/\1/'`
-		echo "deleting reservation from `date -d @$from` to `date -d @$to`" >> $logfile
-		atrm $jid1 $jid2
+		if [[ $now -gt $to ]]; then
+			echo "reservation already completed" >> $logfile
+		elif [[ $now -gt $from && $now -le $to ]]; then
+			echo "stopping active reservation from `date -d @$from` to `date -d @$to`" >> $logfile
+			atrm $jid2
+			$freecmd $user
+		else	
+			echo "deleting reservation from `date -d @$from` to `date -d @$to`" >> $logfile
+			atrm $jid1 $jid2
+		fi
 		sed -i "/$entry/d" "$database"
 	else
 		echo "unrecognized command" >> $logfile

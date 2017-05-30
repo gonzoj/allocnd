@@ -1,9 +1,6 @@
 #!/bin/sh
 
-echo "`date`: restart ssh with AllowUsers root $1" >> sshd.commands
-
-# potentially need to kill sshd instances to kick idle users here
-# sed -i "s/^AllowUsers/# SSHALLOC AllowUsers/" /etc/ssh/sshd_config
-# echo "AllowUsers root $1" >> /etc/ssh/sshd_config
-# /etc/init.d/ssh restart
+pkill sshd
+echo "* hard maxsyslogins 1" > /etc/security/limits.d/allocn.conf
+/etc/init.d/ssh restart
 
