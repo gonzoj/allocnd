@@ -1,4 +1,9 @@
 #!/bin/sh
 
-rm /etc/security/limits.d/allocn.conf
+# Alternative mechanism using pam_limits
+#  rm /etc/security/limits.d/allocn.conf
+
+sed -i "/^AllowUsers root aptdateme $1$/d" /etc/ssh/sshd_config
+sed -i "s/^# --REMOVED BY SSHALLOC-- AllowUsers/AllowUsers/" /etc/ssh/sshd_config
+/etc/init.d/ssh restart
 

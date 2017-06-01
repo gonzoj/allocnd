@@ -1,6 +1,14 @@
 #!/bin/sh
 
-pkill sshd
-echo "* hard maxsyslogins 1" > /etc/security/limits.d/allocn.conf
+# Alternative mechanism using pam_limits
+#  pkill sshd
+#  echo "* hard maxsyslogins 1" > /etc/security/limits.d/allocn.conf
+#  /etc/init.d/ssh restart
+
+for pid in `pgrep -a "sshd" | grep -v "sshd: root" | grep -v "sshd: aptdateme" | sed -e 's/^\([0-9]*\) .*$/\1/'`; do
+	kill $pid
+done
+sed -i "s/^AllowUsers/# --REMOVED BY SSHALLOC-- AllowUsers/" /etc/ssh/sshd_config
+echo "AllowUsers root aptdateme $1" >> /etc/ssh/sshd_config
 /etc/init.d/ssh restart
 
