@@ -14,6 +14,5 @@ remove:
 	rm -f /usr/local/bin/sshalloc
 	rm -f /usr/local/bin/sshfree
 	rm -f /usr/local/bin/allocn
-	rm -rf /etc/allocnd
 	rm -rf /run/allocnd
 
