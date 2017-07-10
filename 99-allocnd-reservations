@@ -1,0 +1,38 @@
+#!/bin/bash
+
+database="/etc/allocnd/i80node.db"
+
+max_lines=5
+
+now=`date +%s`
+
+echo
+
+if [[ -e "$database" ]]; then
+	entries=`wc -l "$database" | cut -d " " -f1`
+else
+	entries=0
+fi
+echo "$entries reservations in database."
+
+if [[ $entries -gt 0 && $now -le `cat "$database" | sort | tail -n1 | cut -d " " -f2` ]]; then
+	echo "Pending reservations:"
+	n=0
+	cat "$database" | sort | while read from to user jid1 jid2; do
+		if [[ $now -le $to ]]; then
+			n=`expr $n + 1`
+			if [[ $n -gt $max_lines ]]; then
+				break
+			fi
+			echo " * `date -d@$from` - `date -d@$to` ($user)"
+		fi
+	done
+else
+	echo "No pending reservations."
+fi
+
+echo
+
+echo "For more information about the reservation system, visit:"
+echo "https://cescloud.itec.kit.edu/cescloud/s/4mPevuCkjwcoqqw"
+

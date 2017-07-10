@@ -5,6 +5,14 @@ logfile="/run/allocnd//allocnd.log"
 alloccmd="/usr/local/bin/sshalloc"
 freecmd="/usr/local/bin/sshfree"
 
+if [[ ! -d "/etc/allocnd" ]]; then
+	mkdir /etc/allocnd
+fi
+
+if [[ ! -d "/run/allocnd" ]]; then
+	mkdir /run/allocnd
+fi
+
 if [[ ! -f "$database" ]]; then
 	touch "$database"
 	chmod 0644 "$database"
@@ -13,10 +21,6 @@ fi
 if [[ ! -f "$logfile" ]]; then
 	touch "$logfile"
 	chmod 0644 "$logfile"
-fi
-
-if [[ ! -d "/run/allocnd" ]]; then
-	mkdir /run/allocnd
 fi
 
 inotifywait -m -e create --format "%w %f" "/run/allocnd" |
@@ -32,15 +36,19 @@ while read path file; do
 			echo "reservation begins after it is supposed to end" >> $logfile
 			continue
 		fi
+		if [[ $from -lt `date +%s` ]]; then
+			echo "reservation begins in the past" >> $logfile
+			continue
+		fi
 		conflict=false
 		while read _from _to _user _jid1 _jid2; do
 			if [[ ($from -ge $_from && $from -le $_to) || ($_from -ge $from && $_from -le $to) ]]; then
 				conflict=true
-				echo "request conflicting with reservation from `date -d @$from` to `date -d @$to` by $_user" >> $logfile
+				echo "request conflicting with reservation from `date -d @$_from` to `date -d @$_to` by $_user" >> $logfile
 				break
 			elif [[ ($to -ge $_from && $to -le $_to) || ($_to -ge $from && $_to -le $to) ]]; then
 				conflict=true
-				echo "request conflicting with reservation from `date -d @$from` to `date -d @$to` by $_user" >> $logfile
+				echo "request conflicting with reservation from `date -d @$_from` to `date -d @$_to` by $_user" >> $logfile
 				break
 			fi
 		done < "$database"

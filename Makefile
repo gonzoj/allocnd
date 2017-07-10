@@ -8,6 +8,7 @@ install:
 	cp sshfree /usr/local/bin/
 	cp allocn /usr/local/bin/
 	mkdir -p /etc/allocnd
+	cp 99-allocnd-reservations /etc/update-motd.d/
 
 remove:
 	rm -f /usr/local/bin/allocnd
@@ -15,4 +16,5 @@ remove:
 	rm -f /usr/local/bin/sshfree
 	rm -f /usr/local/bin/allocn
 	rm -rf /run/allocnd
+	rm -f /etc/update-motd.d/99-allocnd-reservations
 
